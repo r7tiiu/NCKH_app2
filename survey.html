@@ -11,10 +11,27 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
+    <script>
+        (function() {
+            // Lấy thời gian hiện tại
+            const now = Date.now();
+            // Lấy tham số _t từ URL (nếu có)
+            const urlParams = new URLSearchParams(window.location.search);
+            const cacheTime = urlParams.get('_t');
+            
+            // Nếu chưa có _t hoặc _t cũ, chuyển hướng với _t mới
+            if (!cacheTime || cacheTime < now - 60000) { // 60 giây
+                const url = window.location.href.split('?')[0] + '?_t=' + now;
+                window.location.replace(url);
+                return; // Dừng thực thi để chờ reload
+            }
+        })();
+    </script>
+    
+    <!-- Các meta tags vẫn giữ -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-</script>
 </head>
 <body>
 
