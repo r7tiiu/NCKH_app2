@@ -1,7 +1,7 @@
-/* Cấu hình chung cho hệ thống StressCheck AI */
+/* Cấu hình chung cho hệ thống StressCheck */
 const CONFIG = {
     VERSION: "3.2",
-    APP_VERSION: "1.0.1",
+    APP_VERSION: "1.0.0",
     STORAGE_KEY: "stresscheck_results",
     CRITICAL_THRESHOLD: 70,
     MAX_SCORE_PER_QUESTION: 4,
