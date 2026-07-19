@@ -13,17 +13,19 @@
 
     <script>
         (function() {
-            // Lấy thời gian hiện tại
-            const now = Date.now();
-            // Lấy tham số _t từ URL (nếu có)
-            const urlParams = new URLSearchParams(window.location.search);
-            const cacheTime = urlParams.get('_t');
-            
-            // Nếu chưa có _t hoặc _t cũ, chuyển hướng với _t mới
-            if (!cacheTime || cacheTime < now - 60000) { // 60 giây
-                const url = window.location.href.split('?')[0] + '?_t=' + now;
+            const VERSION = CONFIG.APP_VERSION;
+            const cachedVersion = localStorage.getItem("app_version");
+            if (cachedVersion !== VERSION) {
+                if ("caches" in window) {
+                    caches.keys().then(keys => {
+                        keys.forEach(key => caches.delete(key));
+                    });
+                }
+
+                sessionStorage.clear();
+                localStorage.setItem("app_version", VERSION);
+                const url = window.location.href.split('?')[0] + '?v=' + VERSION;
                 window.location.replace(url);
-                return; // Dừng thực thi để chờ reload
             }
         })();
     </script>
