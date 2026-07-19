@@ -1,0 +1,22 @@
+// sw.js – Service Worker cơ bản
+const CACHE_NAME = 'stress-check-v1';
+const urlsToCache = [
+  'index.html',
+  'survey.html',
+  'manifest.json',
+  'icon.png'
+];
+
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(urlsToCache))
+  );
+});
+
+self.addEventListener('fetch', event => {
+  event.respondWith(
+    caches.match(event.request)
+      .then(response => response || fetch(event.request))
+  );
+});
