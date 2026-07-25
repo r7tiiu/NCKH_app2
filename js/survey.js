@@ -271,8 +271,22 @@ function calculateDecisionScore(group) {
 }
 
 function shouldExpandGroup(group) {
+    const hasHighSymptom = group.screening.some(q => {
+        const val = SurveyEngine.answers[q.id];
+        return val !== undefined && val >= 3;
+    });
+    
+    if (hasHighSymptom) {
+        console.log(`Mở rộng ${group.title} vì có câu trả lời >= 3`);
+        return true;
+    }
+    
     const decision = calculateDecisionScore(group);
-    return decision >= CONFIG.screeningThreshold;
+    const result = decision >= CONFIG.screeningThreshold;
+    if (result) {
+        console.log(`Mở rộng ${group.title} vì đạt ngưỡng ${CONFIG.screeningThreshold}%`);
+    }
+    return result;
 }
 
 function finishStage() {
@@ -287,7 +301,6 @@ function finishStage() {
 
     console.log(`Finish stage ${SurveyEngine.currentStage} of ${group.title}, needDeep: ${shouldExpandGroup(group)}`);
 
-    // Resilience: chỉ có screening, không expand
     if (group.id === "resilience" && SurveyEngine.currentStage === STAGE.SCREENING) {
         console.log("Resilience done, finishing survey.");
         finishSurvey();
