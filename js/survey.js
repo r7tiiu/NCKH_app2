@@ -1,6 +1,6 @@
 /*
 ==================================================
-StressCheck – survey.js (Final - có range)
+StressCheck AI – survey.js (Không frequency)
 ==================================================
 */
 
@@ -20,8 +20,7 @@ const SurveyEngine = {
 const STAGE = {
     SCREENING: 0,
     CAUSE: 1,
-    IMPACT: 2,
-    FREQUENCY: 3
+    IMPACT: 2
 };
 
 const LikertText = [
@@ -39,7 +38,6 @@ function initTotalQuestions() {
         total += group.screening.length;
         if (group.causes) total += group.causes.length;
         if (group.impact) total += group.impact.length;
-        if (group.frequency) total += group.frequency.length;
     });
     SurveyEngine.totalQuestions = total;
 }
@@ -64,6 +62,8 @@ function loadCurrentStage() {
         return;
     }
 
+    console.log(`Load category: ${group.title}, stage: ${SurveyEngine.currentStage}`);
+
     switch (SurveyEngine.currentStage) {
         case STAGE.SCREENING:
             SurveyEngine.currentQuestions = group.screening || [];
@@ -74,12 +74,10 @@ function loadCurrentStage() {
         case STAGE.IMPACT:
             SurveyEngine.currentQuestions = group.impact || [];
             break;
-        case STAGE.FREQUENCY:
-            SurveyEngine.currentQuestions = group.frequency || [];
-            break;
     }
 
     if (!SurveyEngine.currentQuestions.length) {
+        console.log("Không có câu hỏi, chuyển stage.");
         finishStage();
         return;
     }
@@ -87,7 +85,6 @@ function loadCurrentStage() {
     SurveyEngine.currentQuestion = 0;
     renderQuestion();
     updateProgress();
-    scrollToTop();
 
     if (SurveyEngine.currentStage === STAGE.SCREENING) {
         showTransitionNotice(`📌 ${group.title}`);
@@ -104,7 +101,6 @@ function renderQuestion() {
         return;
     }
 
-    // Nếu là SCREENING, hiển thị tất cả câu hỏi trong một card
     if (SurveyEngine.currentStage === STAGE.SCREENING) {
         let html = `<div class="question-card"><div class="question-title">Câu hỏi sàng lọc</div>`;
         questions.forEach((q) => {
@@ -126,7 +122,6 @@ function renderQuestion() {
         return;
     }
 
-    // Các stage khác: hiển thị từng câu hỏi
     const q = questions[SurveyEngine.currentQuestion];
     if (!q) {
         finishStage();
@@ -144,43 +139,27 @@ function renderQuestion() {
             </div>`;
         });
     } else if (q.type === "checkbox") {
-    // Xác định reverse (câu "Không ảnh hưởng")
-    let reverseOption = null;
-    q.options.forEach((text, idx) => {
-        if (text.includes("Không ảnh hưởng") || text === "Không" || text.includes("không ảnh hưởng")) {
-            reverseOption = { text, idx };
-        }
-    });
+        // Xác định reverse (câu "Không ảnh hưởng")
+        let reverseOption = null;
+        q.options.forEach((text, idx) => {
+            if (text.includes("Không ảnh hưởng") || text === "Không" || text.includes("không ảnh hưởng")) {
+                reverseOption = { text, idx };
+            }
+        });
 
-    const selectedValues = Array.isArray(SurveyEngine.answers[q.id]) ? SurveyEngine.answers[q.id] : [];
-    html += `<div class="checkbox-group" data-reverse-index="${reverseOption ? reverseOption.idx : -1}">`;
-    q.options.forEach((text, index) => {
-        const checked = selectedValues.includes(text) ? "checked" : "";
-        const isReverse = (reverseOption && index === reverseOption.idx);
-        html += `<div class="option">
-            <input type="checkbox" id="c${index}" value="${text}" ${checked} 
-                   ${isReverse ? 'data-reverse="true"' : ''}
-                   onchange="handleCheckboxChange(this, '${q.id}', ${isReverse})">
-            <label for="c${index}">${text}</label>
-        </div>`;
-    });
-    html += `</div>`;
-    } else if (q.type === "range") {
-        const currentVal = SurveyEngine.answers[q.id] ?? 50;
-        html += `
-            <div class="range-container">
-                <input type="range" 
-                    id="slider-${q.id}" 
-                    min="0" max="100" step="1" 
-                    value="${currentVal}"
-                    oninput="updateSliderValue('${q.id}', this.value)">
-                <div class="range-value-display">
-                    <span class="min-label">0%</span>
-                    <span class="current-value" id="slider-value-${q.id}">${currentVal}%</span>
-                    <span class="max-label">100%</span>
-                </div>
-            </div>
-        `;
+        const selectedValues = Array.isArray(SurveyEngine.answers[q.id]) ? SurveyEngine.answers[q.id] : [];
+        html += `<div class="checkbox-group" data-reverse-index="${reverseOption ? reverseOption.idx : -1}">`;
+        q.options.forEach((text, index) => {
+            const checked = selectedValues.includes(text) ? "checked" : "";
+            const isReverse = (reverseOption && index === reverseOption.idx);
+            html += `<div class="option">
+                <input type="checkbox" id="c${index}" value="${text}" ${checked} 
+                       ${isReverse ? 'data-reverse="true"' : ''}
+                       onchange="handleCheckboxChange(this, '${q.id}', ${isReverse})">
+                <label for="c${index}">${text}</label>
+            </div>`;
+        });
+        html += `</div>`;
     }
 
     html += `</div>`;
@@ -219,11 +198,6 @@ function saveCurrentAnswer() {
         document.querySelectorAll('input[type="checkbox"]:checked').forEach(e => arr.push(e.value));
         SurveyEngine.answers[q.id] = arr;
         return arr.length > 0;
-    } else if (q.type === "range") { // ✅ THÊM
-        const slider = document.getElementById(`slider-${q.id}`);
-        if (!slider) return false;
-        SurveyEngine.answers[q.id] = parseInt(slider.value, 10);
-        return true;
     }
     return true;
 }
@@ -273,9 +247,7 @@ function previousQuestion() {
         case STAGE.SCREENING: SurveyEngine.currentQuestions = group.screening; break;
         case STAGE.CAUSE: SurveyEngine.currentQuestions = group.causes; break;
         case STAGE.IMPACT: SurveyEngine.currentQuestions = group.impact; break;
-        case STAGE.FREQUENCY: SurveyEngine.currentQuestions = group.frequency; break;
     }
-
     renderQuestion();
     updateProgress();
     scrollToTop();
@@ -361,24 +333,6 @@ function finishStage() {
     }
 
     if (SurveyEngine.currentStage === STAGE.IMPACT) {
-        if (group.frequency && group.frequency.length > 0) {
-            SurveyEngine.currentStage = STAGE.FREQUENCY;
-            SurveyEngine.currentQuestion = 0;
-            loadCurrentStage();
-            return;
-        }
-        SurveyEngine.currentCategory++;
-        SurveyEngine.currentStage = STAGE.SCREENING;
-        SurveyEngine.currentQuestion = 0;
-        if (SurveyEngine.currentCategory >= SURVEY.length) {
-            finishSurvey();
-            return;
-        }
-        loadCurrentStage();
-        return;
-    }
-
-    if (SurveyEngine.currentStage === STAGE.FREQUENCY) {
         SurveyEngine.currentCategory++;
         SurveyEngine.currentStage = STAGE.SCREENING;
         SurveyEngine.currentQuestion = 0;
@@ -401,7 +355,6 @@ function calculateProgress() {
         if (SurveyEngine.groupResult[group.id]?.expanded) {
             total += (group.causes || []).length;
             total += (group.impact || []).length;
-            total += (group.frequency || []).length; // ✅ THÊM
         }
     });
 
@@ -463,32 +416,9 @@ function showInlineMessage(msg) {
     setTimeout(() => { if (div.parentNode) div.remove(); }, 3000);
 }
 
-// ===== EVENT LISTENERS =====
-document.addEventListener('DOMContentLoaded', function() {
-    const nextBtn = document.getElementById("nextBtn");
-    const backBtn = document.getElementById("backBtn");
-    const startBtn = document.getElementById("startBtn");
-    const themeBtn = document.getElementById("themeBtn");
-
-    if (nextBtn) nextBtn.addEventListener("click", nextQuestion);
-    if (backBtn) backBtn.addEventListener("click", previousQuestion);
-
-    if (startBtn) {
-        startBtn.addEventListener("click", function() {
-            const welcomePage = document.getElementById("welcomePage");
-            const surveyPage = document.getElementById("surveyPage");
-            if (welcomePage) welcomePage.classList.remove("active");
-            if (surveyPage) surveyPage.classList.add("active");
-            startSurvey();
-        });
-    }
-
-    if (themeBtn) {
-        themeBtn.addEventListener("click", function() {
-            document.body.classList.toggle('dark');
-        });
-    }
-});
+function scrollToTop() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
 
 // ===== XỬ LÝ CHECKBOX VỚI REVERSE =====
 window.handleCheckboxChange = function(checkbox, questionId, isReverse) {
@@ -497,22 +427,18 @@ window.handleCheckboxChange = function(checkbox, questionId, isReverse) {
     const allCheckboxes = group.querySelectorAll('input[type="checkbox"]');
 
     if (isReverse) {
-        // Nếu chọn reverse, bỏ chọn tất cả các checkbox khác
         if (checkbox.checked) {
             allCheckboxes.forEach(cb => {
                 if (cb !== checkbox) cb.checked = false;
             });
         }
-        // Nếu bỏ chọn reverse, không làm gì thêm (người dùng có thể chọn lại các mục khác)
     } else {
-        // Nếu chọn một mục khác, bỏ chọn reverse (nếu có)
         if (checkbox.checked && reverseIndex !== -1) {
             const reverseCb = group.querySelector(`input[type="checkbox"][data-reverse="true"]`);
             if (reverseCb) reverseCb.checked = false;
         }
     }
 
-    // Lưu lại giá trị mới vào SurveyEngine.answers
     const checkedValues = [];
     allCheckboxes.forEach(cb => {
         if (cb.checked) checkedValues.push(cb.value);
@@ -520,32 +446,18 @@ window.handleCheckboxChange = function(checkbox, questionId, isReverse) {
     SurveyEngine.answers[questionId] = checkedValues;
 };
 
-// ===== CẬP NHẬT GIÁ TRỊ SLIDER =====
-window.updateSliderValue = function(questionId, value) {
-    const display = document.getElementById(`slider-value-${questionId}`);
-    if (display) {
-        display.textContent = value + '%';
-        // Thêm hiệu ứng highlight
-        display.classList.add('highlight');
-        setTimeout(() => display.classList.remove('highlight'), 300);
-    }
-    // Lưu vào SurveyEngine.answers ngay lập tức
-    SurveyEngine.answers[questionId] = parseInt(value, 10);
-};
-
+// ===== EVENT LISTENERS =====
 document.addEventListener('DOMContentLoaded', function() {
     const nextBtn = document.getElementById("nextBtn");
     const backBtn = document.getElementById("backBtn");
     const startBtn = document.getElementById("startBtn");
     const themeBtn = document.getElementById("themeBtn");
 
-    // ===== SỰ KIỆN CLICK TOÀN TRANG WELCOME =====
+    // Sự kiện click toàn trang welcome (đã xóa nút start)
     const welcomePage = document.getElementById("welcomePage");
     if (welcomePage) {
         welcomePage.addEventListener("click", function(event) {
-            // Chỉ xử lý nếu trang welcome đang active
             if (!welcomePage.classList.contains("active")) return;
-            
             const surveyPage = document.getElementById("surveyPage");
             if (surveyPage) {
                 welcomePage.classList.remove("active");
@@ -553,12 +465,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 startSurvey();
             }
         });
-
-        // Thêm cursor pointer để gợi ý có thể click
         welcomePage.style.cursor = "pointer";
     }
 
-    // ===== CÁC SỰ KIỆN KHÁC =====
     if (nextBtn) nextBtn.addEventListener("click", nextQuestion);
     if (backBtn) backBtn.addEventListener("click", previousQuestion);
 
@@ -569,9 +478,4 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// ===== CUỘN LÊN ĐẦU TRANG =====
-function scrollToTop() {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-console.log("Survey Engine loaded successfully (Final - with range)");
+console.log("Survey Engine loaded successfully (Không frequency)");

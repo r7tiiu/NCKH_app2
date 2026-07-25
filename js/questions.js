@@ -1,6 +1,6 @@
 /*
 ==================================================
-StressCheck - QUESTIONS DATA (Optimized v3.1)
+StressCheck - QUESTIONS DATA (Không frequency)
 ==================================================
 */
 
@@ -42,13 +42,6 @@ const SURVEY = [
                     "Xa lánh mọi người", "Hay cáu gắt", "Không ảnh hưởng nhiều"
                 ]
             }
-        ],
-        frequency: [
-            {
-                id: "study_f1",
-                type: "range",
-                question: "Tần suất bạn cảm thấy mất động lực học tập là bao nhiêu?"
-            }
         ]
     },
     {
@@ -85,15 +78,8 @@ const SURVEY = [
                 question: "Trước hoặc trong kỳ thi, bạn thường gặp phải tình trạng nào?",
                 options: [
                     "Học dồn quên ăn quên ngủ", "Đau đầu, buồn nôn khi vào phòng thi",
-                    "Bị rối loạn tiêu hóa", "Hoảng loạn, mất bình tĩnh", "Khóc lóc, stress nặng", "Không ảnh hưởng nhiều"
+                    "Bị rối loạn tiêu hóa", "Hoảng loạn, mất bình tĩnh", "Khóc lóc, stress nặng"
                 ]
-            }
-        ],
-        frequency: [
-            {
-                id: "exam_f1",
-                type: "range",
-                question: "Tần suất bạn gặp ác mộng hoặc mất ngủ liên quan đến thi cử?"
             }
         ]
     },
@@ -131,15 +117,8 @@ const SURVEY = [
                 question: "Áp lực từ gia đình khiến bạn có xu hướng làm gì?",
                 options: [
                     "Không muốn về nhà", "Cô lập bản thân trong phòng", "Cãi lại bố mẹ",
-                    "Tổn thương tâm lý sâu sắc", "Tìm người lạ để tâm sự", "Không ảnh hưởng nhiều"
+                    "Tổn thương tâm lý sâu sắc", "Tìm người lạ để tâm sự"
                 ]
-            }
-        ],
-        frequency: [
-            {
-                id: "family_f1",
-                type: "range",
-                question: "Tần suất xảy ra xung đột hoặc bất đồng ý kiến giữa bạn và bố mẹ?"
             }
         ]
     },
@@ -156,7 +135,7 @@ const SURVEY = [
             {
                 id: "peer_s2",
                 type: "likert",
-                question: "Bạn có thường cảm thấy mình nổ lực trong vô ích không?"
+                question: "Bạn có thường cảm thấy mình nỗ lực trong vô ích không?"
             }
         ],
         causes: [
@@ -177,15 +156,8 @@ const SURVEY = [
                 question: "Áp lực đồng lứa ảnh hưởng thế nào đến lối sống của bạn?",
                 options: [
                     "Cố gắng quá sức dẫn đến kiệt sức", "Tự ti, ngại giao tiếp xã hội",
-                    "Ghen tị, oán trách bản thân", "Chi tiêu lãng phí để bằng bạn bằng bè", "Không ảnh hưởng nhiều"
+                    "Ghen tị, oán trách bản thân", "Chi tiêu lãng phí để bằng bạn bằng bè"
                 ]
-            }
-        ],
-        frequency: [
-            {
-                id: "peer_f1",
-                type: "range",
-                question: "Tần suất bạn so sánh bản thân với người khác khi lướt mạng xã hội?"
             }
         ]
     },
@@ -212,7 +184,8 @@ const SURVEY = [
                 question: "Lý do chính khiến bạn mất ngủ hoặc ngủ không ngon giấc?",
                 options: [
                     "Suy nghĩ, lo lắng vẩn vơ (Overthinking)", "Sử dụng điện thoại/máy tính sát giờ ngủ",
-                    "Uống trà, cà phê muộn", "Tiếng ồn hoặc không gian phòng ngủ không thoải mái", "Lịch học dày đặc phải thức khuya", "Khác"
+                    "Uống trà, cà phê muộn", "Tiếng ồn hoặc không gian phòng ngủ không thoải mái", 
+                    "Lịch học dày đặc phải thức khuya", "Khác"
                 ]
             }
         ],
@@ -223,15 +196,9 @@ const SURVEY = [
                 question: "Việc thiếu ngủ gây ra những hậu quả gì cho bạn vào ngày hôm sau?",
                 options: [
                     "Buồn ngủ gật, ngủ gà ngủ gật trên lớp", "Mất tập trung, suy giảm trí nhớ",
-                    "Cơ thể uể oải, không có năng lượng", "Dễ nổi cáu, tâm trạng thất thường", "Đau phờ phạc đầu tóc", "Không ảnh hưởng nhiều"
+                    "Cơ thể uể oải, không có năng lượng", "Dễ nổi cáu, tâm trạng thất thường", 
+                    "Đau đầu, mệt mỏi"
                 ]
-            }
-        ],
-        frequency: [
-            {
-                id: "sleep_f1",
-                type: "range",
-                question: "Tần suất bạn ngủ ít hơn 5 tiếng một ngày trong tuần vừa qua?"
             }
         ]
     },
@@ -258,7 +225,8 @@ const SURVEY = [
                 question: "Yếu tố nào tác động mạnh nhất đến cảm xúc tiêu cực của bạn?",
                 options: [
                     "Gặp chuyện không vui trong tình cảm, bạn bè", "Bị chỉ trích, phê bình",
-                    "Do áp lực tích tụ từ nhiều phía", "Thay đổi nội tiết tố", "Không có lý do cụ thể, tự nhiên buồn", "Khác"
+                    "Do áp lực tích tụ từ nhiều phía", "Thay đổi nội tiết tố", 
+                    "Không có lý do cụ thể, tự nhiên buồn", "Khác"
                 ]
             }
         ],
@@ -268,23 +236,16 @@ const SURVEY = [
                 type: "checkbox",
                 question: "Khi cảm xúc bất ổn, bạn thường có biểu hiện gì?",
                 options: [
-                    "Khóc", "Dễ cáu", "Overthinking", "Mất động lực", "Không muốn giao tiếp", "Mệt mỏi", "Không ảnh hưởng nhiều"
+                    "Khóc", "Dễ cáu gắt", "Suy nghĩ quá nhiều (Overthinking)", 
+                    "Mất động lực", "Không muốn giao tiếp", "Mệt mỏi"
                 ]
-            }
-        ],
-        frequency: [
-            {
-                id: "emotion_f1",
-                type: "range",
-                question: "Tần suất bạn cảm thấy không kiểm soát được cơn giận hoặc nỗi buồn?"
             }
         ]
     },
-
     {
         id: "resilience",
         title: "Khả năng phục hồi",
-        weight: 0, // Không dùng weight vì không ảnh hưởng stress tổng
+        weight: 0,
         screening: [
             {
                 id: "res_s1",
@@ -312,17 +273,13 @@ const SURVEY = [
     }
 ];
 
-/*=========================================================
-UTILITY FUNCTIONS
-=========================================================*/
-
 function getGroup(id) {
     return SURVEY.find(g => g.id === id) || null;
 }
 
 function getQuestion(questionId) {
     for (const group of SURVEY) {
-        const sections = [group.screening, group.causes, group.impact, group.frequency].filter(Boolean);
+        const sections = [group.screening, group.causes, group.impact].filter(Boolean);
         for (const list of sections) {
             const q = list.find(item => item.id === questionId);
             if (q) return q;

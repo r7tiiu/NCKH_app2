@@ -1,7 +1,7 @@
 /*
 ==================================================
 scoring.js
-StressCheck – SCORING ENGINE (sửa logic)
+StressCheck AI – SCORING ENGINE (Không frequency)
 ==================================================
 */
 
@@ -29,17 +29,17 @@ const SCORE_ENGINE = {
 // Chỉ lấy các nhóm stress, bỏ qua resilience
 const STRESS_GROUPS = SURVEY.filter(g => g.id !== "resilience");
 
-// ===== HÀM TÍNH ĐIỂM SÀNG LỌC (2 câu likert 0-4 → %) =====
+// ===== HÀM TÍNH ĐIỂM SÀNG LỌC =====
 function symptomScore(group) {
     let total = 0;
     group.screening.forEach(q => {
         total += SurveyEngine.answers[q.id] ?? 0;
     });
-    const max = group.screening.length * 4; // 8
+    const max = group.screening.length * 4;
     return max === 0 ? 0 : (total / max) * 100;
 }
 
-// ===== HÀM TÍNH ĐIỂM CAUSE (checkbox) =====
+// ===== HÀM TÍNH ĐIỂM CAUSE =====
 function causeScore(group) {
     const causeQ = group.causes?.[0];
     if (!causeQ) return 0;
@@ -48,42 +48,29 @@ function causeScore(group) {
     return total === 0 ? 0 : (selected.length / total) * 100;
 }
 
-// ===== HÀM TÍNH ĐIỂM IMPACT (checkbox + reverse) =====
+// ===== HÀM TÍNH ĐIỂM IMPACT =====
 function impactScore(group) {
     const impactQ = group.impact?.[0];
     if (!impactQ) return 0;
     const selected = SurveyEngine.answers[impactQ.id] || [];
     const options = impactQ.options;
 
-    // Tìm câu reverse (chứa "Không ảnh hưởng" hoặc "Không")
+    // Tìm câu reverse
     const reverseIdx = options.findIndex(opt => 
         opt.includes("Không ảnh hưởng") || opt === "Không" || opt.includes("không ảnh hưởng")
     );
 
-    // Nếu chọn reverse → chỉ 10%
     if (reverseIdx !== -1 && selected.includes(options[reverseIdx])) {
         return 10;
     }
 
-    // Bỏ qua reverse khi tính
     const filtered = options.filter((_, idx) => idx !== reverseIdx);
     if (filtered.length === 0) return 0;
     const chosen = selected.filter(val => filtered.includes(val));
     return (chosen.length / filtered.length) * 100;
 }
 
-// ===== HÀM TÍNH ĐIỂM FREQUENCY (1 câu range 0 - 100%) =====
-function frequencyScore(group) {
-    const freqQ = group.frequency?.[0];
-    if (!freqQ) return 0;
-    const val = SurveyEngine.answers[freqQ.id] ?? 0;
-    if (freqQ.type === "range") {
-        return val;
-    }
-    return val * 25;
-}
-
-// ===== TÍNH RISK CHO MỖI DOMAIN (theo logic mới) =====
+// ===== TÍNH RISK CHO MỖI DOMAIN (Không frequency) =====
 function calculateRisk(group) {
     const symptom = symptomScore(group);
 
@@ -93,27 +80,24 @@ function calculateRisk(group) {
             symptom,
             cause: 0,
             impact: 0,
-            frequency: 0,
             risk: symptom * 0.35
         };
     }
 
-    // Ngược lại: tính đầy đủ
+    // Ngược lại: tính đầy đủ với trọng số EFA
     const cause = causeScore(group);
     const impact = impactScore(group);
-    const frequency = frequencyScore(group);
-    const risk = symptom * 0.35 + cause * 0.25 + impact * 0.25 + frequency * 0.15;
+    const risk = symptom * 0.55 + cause * 0.28 + impact * 0.17;
 
     return {
         symptom,
         cause,
         impact,
-        frequency,
         risk
     };
 }
 
-// ===== CÁC HÀM TỔNG HỢP (giữ nguyên) =====
+// ===== CÁC HÀM TỔNG HỢP =====
 function calculateGroupScores() {
     SCORE_ENGINE.groupScores = {};
     STRESS_GROUPS.forEach(group => {
@@ -165,7 +149,7 @@ function calculateBurnout() {
     const emotion = SCORE_ENGINE.groupScores.emotion?.risk || 0;
     const study = SCORE_ENGINE.groupScores.study?.risk || 0;
     const exam = SCORE_ENGINE.groupScores.exam?.risk || 0;
-    SCORE_ENGINE.burnout = study * 0.35 + exam * 0.30 + sleep * 0.25 + emotion * 0.10;
+    SCORE_ENGINE.burnout = study * 0.30 + exam * 0.25 + sleep * 0.25 + emotion * 0.20;
 }
 
 function calculateCriticalIndex() {
@@ -192,26 +176,14 @@ function calculateResilience() {
         SCORE_ENGINE.resilienceIndex = 0;
         return;
     }
-
-    const valueMap = {
-        0: 5,
-        1: 25,
-        2: 60,
-        3: 80,
-        4: 100
-    };
-
-    let total = 0;
-    let count = 0;
+    let total = 0, count = 0;
     resGroup.screening.forEach(q => {
-        const val = SurveyEngine.answers[q.id];
-        if (val !== undefined && val !== null && val >= 0 && val <= 4) {
-            total += valueMap[val] || 0;
+        if (SurveyEngine.answers[q.id] !== undefined) {
+            total += SurveyEngine.answers[q.id];
             count++;
         }
     });
-
-    SCORE_ENGINE.resilienceIndex = count > 0 ? Math.round(total / count) : 0;
+    SCORE_ENGINE.resilienceIndex = count > 0 ? Math.round((total / (count * 4)) * 100) : 0;
 }
 
 function classifyRisk(score) {
