@@ -1,7 +1,7 @@
 /*
 ==================================================
 scoring.js
-StressCheck AI – SCORING ENGINE (Không frequency)
+StressCheck – SCORING ENGINE (Không frequency)
 ==================================================
 */
 
