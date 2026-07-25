@@ -1,6 +1,6 @@
 /*
 ==================================================
-StressCheck AI – survey.js (Không frequency)
+StressCheck – survey.js (Không frequency)
 ==================================================
 */
 
