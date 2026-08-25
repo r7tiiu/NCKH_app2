@@ -16,8 +16,6 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'API key not configured' });
     }
 
-    console.log('🔑 API Key exists:', !!apiKey);
-
     try {
         const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
@@ -26,7 +24,8 @@ export default async function handler(req, res) {
                 'Authorization': `Bearer ${apiKey}`
             },
             body: JSON.stringify({
-                model: 'llama-3.3-70b-versatile', // hoặc 'llama-3.1-70b-versatile'
+                // ✅ SỬA MODEL Ở ĐÂY
+                model: 'llama-3.1-70b-versatile', // hoặc 'mixtral-8x7b-32768'
                 messages: [{ role: 'user', content: prompt }],
                 temperature: 0.7,
                 max_tokens: 300
