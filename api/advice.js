@@ -25,7 +25,7 @@ export default async function handler(req, res) {
             },
             body: JSON.stringify({
                 // ✅ SỬA MODEL Ở ĐÂY
-                model: 'llama-3.1-70b-versatile', // hoặc 'mixtral-8x7b-32768'
+                model: 'mixtral-8x7b-32768',
                 messages: [{ role: 'user', content: prompt }],
                 temperature: 0.7,
                 max_tokens: 300
