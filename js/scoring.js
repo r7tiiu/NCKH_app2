@@ -1,230 +1,189 @@
 /*
 ==================================================
-scoring.js
-StressCheck – SCORING ENGINE (Không frequency)
+scoring.js – Tính điểm cho mô hình 3 cặp
 ==================================================
 */
 
 const SCORE_ENGINE = {
-    groupScores: {},
     overallStress: 0,
-    peakStress: 0,
-    spreadStress: 0,
+    domainScores: {},
     burnout: 0,
     burnoutIndex: 0,
-    spreadIndex: 0,
-    dominantGroup: null,
-    recommendation: [],
+    resilience: 0,
+    resilienceIndex: 0,
     rank: [],
-    criticalAreas: 0,
-    confidence: 100,
-    level: {},
     radarLabels: [],
     radarValues: [],
-    barLabels: [],
-    barValues: [],
-    resilienceIndex: 0
+    level: {}
 };
 
-// Chỉ lấy các nhóm stress, bỏ qua resilience
-const STRESS_GROUPS = SURVEY.filter(g => g.id !== "resilience");
+// Trọng số S, C, I
+const WEIGHT_S = 0.55;
+const WEIGHT_C = 0.28;
+const WEIGHT_I = 0.17;
 
-// ===== HÀM TÍNH ĐIỂM SÀNG LỌC =====
-function symptomScore(group) {
-    let total = 0;
-    group.screening.forEach(q => {
-        total += SurveyEngine.answers[q.id] ?? 0;
-    });
-    const max = group.screening.length * 4;
-    return max === 0 ? 0 : (total / max) * 100;
+// Trọng số các domain
+const DOMAIN_WEIGHTS = {
+    study: 0.1624,
+    exam: 0.1893,
+    sleep: 0.1586,
+    emotion: 0.1680,
+    family: 0.1741,
+    social: 0.1475
+};
+
+// Hàm tính điểm S từ câu trả lời (0-4)
+function getSScore(domainId, answerKey) {
+    const val = SurveyEngine.answers[answerKey];
+    if (val === undefined || val === null) return 0;
+    return (val / 4) * 100;
 }
 
-// ===== HÀM TÍNH ĐIỂM CAUSE =====
-function causeScore(group) {
-    const causeQ = group.causes?.[0];
-    if (!causeQ) return 0;
-    const selected = SurveyEngine.answers[causeQ.id] || [];
-    const total = causeQ.options.length;
-    return total === 0 ? 0 : (selected.length / total) * 100;
+// Hàm tính điểm C từ checkbox
+function getCScore(domainId, answerKey) {
+    const selected = SurveyEngine.answers[answerKey] || [];
+    const total = SURVEY.cause[domainId] ? SURVEY.cause[domainId].options.length : 0;
+    if (total === 0) return 0;
+    return (selected.length / total) * 100;
 }
 
-// ===== HÀM TÍNH ĐIỂM IMPACT =====
-function impactScore(group) {
-    const impactQ = group.impact?.[0];
-    if (!impactQ) return 0;
-    const selected = SurveyEngine.answers[impactQ.id] || [];
-    const options = impactQ.options;
-
-    // Tìm câu reverse
-    const reverseIdx = options.findIndex(opt => 
-        opt.includes("Không ảnh hưởng") || opt === "Không" || opt.includes("không ảnh hưởng")
-    );
-
-    if (reverseIdx !== -1 && selected.includes(options[reverseIdx])) {
-        return 10;
-    }
-
-    const filtered = options.filter((_, idx) => idx !== reverseIdx);
-    if (filtered.length === 0) return 0;
-    const chosen = selected.filter(val => filtered.includes(val));
-    return (chosen.length / filtered.length) * 100;
+// Hàm tính điểm I từ checkbox
+function getIScore(domainId, answerKey) {
+    const selected = SurveyEngine.answers[answerKey] || [];
+    const total = SURVEY.impact[domainId] ? SURVEY.impact[domainId].options.length : 0;
+    if (total === 0) return 0;
+    return (selected.length / total) * 100;
 }
 
-// ===== TÍNH RISK CHO MỖI DOMAIN (Không frequency) =====
-function calculateRisk(group) {
-    const symptom = symptomScore(group);
+// Tính điểm cho từng domain
+function calculateDomainScores() {
+    const domainIds = Object.keys(SURVEY.domains);
+    domainIds.forEach(dom => {
+        let S = 0, C = 0, I = 0;
+        let hasS = false, hasC = false, hasI = false;
 
-    // Nếu screening < 40% → chỉ lấy 35% của symptom
-    if (symptom < 40) {
-        return {
-            symptom,
-            cause: 0,
-            impact: 0,
-            risk: symptom * 0.35
-        };
-    }
+        // Lấy điểm S (kiểm tra tất cả các key có thể)
+        const sKeys = [`${dom}_s1`, `${dom}_s2`, `${dom}_s3`];
+        for (let key of sKeys) {
+            if (SurveyEngine.answers[key] !== undefined) {
+                S = getSScore(dom, key);
+                hasS = true;
+                break;
+            }
+        }
 
-    // Ngược lại: tính đầy đủ với trọng số EFA
-    const cause = causeScore(group);
-    const impact = impactScore(group);
-    const risk = symptom * 0.55 + cause * 0.28 + impact * 0.17;
+        // Lấy điểm C
+        const cKeys = [`${dom}_c1`, `${dom}_c2`, `${dom}_c3`];
+        for (let key of cKeys) {
+            if (SurveyEngine.answers[key] !== undefined) {
+                C = getCScore(dom, key);
+                hasC = true;
+                break;
+            }
+        }
 
-    return {
-        symptom,
-        cause,
-        impact,
-        risk
-    };
-}
+        // Lấy điểm I
+        const iKeys = [`${dom}_i1`, `${dom}_i2`, `${dom}_i3`];
+        for (let key of iKeys) {
+            if (SurveyEngine.answers[key] !== undefined) {
+                I = getIScore(dom, key);
+                hasI = true;
+                break;
+            }
+        }
 
-// ===== CÁC HÀM TỔNG HỢP =====
-function calculateGroupScores() {
-    SCORE_ENGINE.groupScores = {};
-    STRESS_GROUPS.forEach(group => {
-        const result = calculateRisk(group);
-        SCORE_ENGINE.groupScores[group.id] = {
-            ...result,
-            weight: group.weight,
-            weighted: result.risk * group.weight
-        };
-    });
-}
-
-function calculatePeakStress() {
-    let max = -1;
-    let name = "";
-    Object.entries(SCORE_ENGINE.groupScores).forEach(([id, data]) => {
-        if (data.risk > max) {
-            max = data.risk;
-            name = id;
+        // Nếu chỉ có S, dùng S*0.55
+        if (hasS && !hasC && !hasI) {
+            SCORE_ENGINE.domainScores[dom] = S * 0.55;
+        } else if (hasS && hasC && hasI) {
+            SCORE_ENGINE.domainScores[dom] = WEIGHT_S * S + WEIGHT_C * C + WEIGHT_I * I;
+        } else if (hasS && hasC) {
+            // Nếu chỉ có S và C (không có I) → dùng S*0.55 + C*0.28
+            SCORE_ENGINE.domainScores[dom] = WEIGHT_S * S + WEIGHT_C * C;
+        } else {
+            SCORE_ENGINE.domainScores[dom] = 0;
         }
     });
-    SCORE_ENGINE.peakStress = max;
-    SCORE_ENGINE.dominantGroup = name;
 }
 
+// Tính Overall Stress
 function calculateOverallStress() {
     let total = 0;
-    let weight = 0;
-    STRESS_GROUPS.forEach(group => {
-        const grpScore = SCORE_ENGINE.groupScores[group.id]?.risk || 0;
-        total += grpScore * group.weight;
-        weight += group.weight;
+    let weightSum = 0;
+    Object.keys(DOMAIN_WEIGHTS).forEach(dom => {
+        const score = SCORE_ENGINE.domainScores[dom] || 0;
+        const w = DOMAIN_WEIGHTS[dom];
+        total += score * w;
+        weightSum += w;
     });
-    SCORE_ENGINE.overallStress = weight === 0 ? 0 : total / weight;
+    SCORE_ENGINE.overallStress = weightSum > 0 ? total / weightSum : 0;
 }
 
-function calculateSpreadStress() {
-    const risks = STRESS_GROUPS.map(g => SCORE_ENGINE.groupScores[g.id]?.risk || 0);
-    const mean = risks.reduce((a, b) => a + b, 0) / risks.length;
-    let variance = 0;
-    risks.forEach(v => variance += Math.pow(v - mean, 2));
-    variance /= risks.length;
-    const std = Math.sqrt(variance);
-    SCORE_ENGINE.spreadStress = Math.max(0, 100 - std * 2);
-}
-
+// Tính Burnout
 function calculateBurnout() {
-    const sleep = SCORE_ENGINE.groupScores.sleep?.risk || 0;
-    const emotion = SCORE_ENGINE.groupScores.emotion?.risk || 0;
-    const study = SCORE_ENGINE.groupScores.study?.risk || 0;
-    const exam = SCORE_ENGINE.groupScores.exam?.risk || 0;
+    const study = SCORE_ENGINE.domainScores.study || 0;
+    const exam = SCORE_ENGINE.domainScores.exam || 0;
+    const sleep = SCORE_ENGINE.domainScores.sleep || 0;
+    const emotion = SCORE_ENGINE.domainScores.emotion || 0;
     SCORE_ENGINE.burnout = study * 0.30 + exam * 0.25 + sleep * 0.25 + emotion * 0.20;
+    SCORE_ENGINE.burnoutIndex = SCORE_ENGINE.burnout;
 }
 
-function calculateCriticalIndex() {
-    let count = 0;
-    STRESS_GROUPS.forEach(group => {
-        if ((SCORE_ENGINE.groupScores[group.id]?.risk || 0) >= 70) count++;
-    });
-    SCORE_ENGINE.criticalAreas = count;
-}
-
-function rankStressAreas() {
-    SCORE_ENGINE.rank = STRESS_GROUPS.map(g => ({
-        id: g.id,
-        title: g.title,
-        risk: SCORE_ENGINE.groupScores[g.id]?.risk || 0
-    }));
-    SCORE_ENGINE.rank.sort((a, b) => b.risk - a.risk);
-}
-
-// ===== RESILIENCE =====
+// Tính Resilience
 function calculateResilience() {
-    const resGroup = SURVEY.find(g => g.id === "resilience");
-    if (!resGroup) {
-        SCORE_ENGINE.resilienceIndex = 0;
-        return;
-    }
-    let total = 0, count = 0;
-    resGroup.screening.forEach(q => {
-        if (SurveyEngine.answers[q.id] !== undefined) {
-            total += SurveyEngine.answers[q.id];
+    // Lấy 4 câu resilience (giả định từ câu res_s1, res_s2, res_s3, res_s4)
+    const resKeys = ['res_s1', 'res_s2', 'res_s3', 'res_s4'];
+    let total = 0;
+    let count = 0;
+    resKeys.forEach(key => {
+        const val = SurveyEngine.answers[key];
+        if (val !== undefined && val !== null) {
+            total += val;
             count++;
         }
     });
-    SCORE_ENGINE.resilienceIndex = count > 0 ? Math.round((total / (count * 4)) * 100) : 0;
+    // Quy đổi 0-4 thành 0-100% (ánh xạ: 0→5%, 1→25%, 2→60%, 3→80%, 4→100%)
+    const valueMap = { 0: 5, 1: 25, 2: 60, 3: 80, 4: 100 };
+    let resTotal = 0;
+    let resCount = 0;
+    resKeys.forEach(key => {
+        const val = SurveyEngine.answers[key];
+        if (val !== undefined && val !== null && val >= 0 && val <= 4) {
+            resTotal += valueMap[val] || 0;
+            resCount++;
+        }
+    });
+    SCORE_ENGINE.resilience = resCount > 0 ? Math.round(resTotal / resCount) : 0;
+    SCORE_ENGINE.resilienceIndex = SCORE_ENGINE.resilience;
 }
 
-function classifyRisk(score) {
-    if (score < 20) return { level: "Rất thấp", color: "#2ecc71" };
-    if (score < 40) return { level: "Thấp", color: "#27ae60" };
-    if (score < 60) return { level: "Trung bình", color: "#f39c12" };
-    if (score < 75) return { level: "Cao", color: "#e67e22" };
-    if (score < 90) return { level: "Rất cao", color: "#e74c3c" };
-    return { level: "Khẩn cấp", color: "#c0392b" };
+// Xếp hạng domain theo điểm stress
+function rankDomains() {
+    const sorted = Object.keys(SCORE_ENGINE.domainScores)
+        .map(id => ({
+            id: id,
+            title: SURVEY.domains[id].title,
+            risk: SCORE_ENGINE.domainScores[id] || 0
+        }))
+        .sort((a, b) => b.risk - a.risk);
+    SCORE_ENGINE.rank = sorted;
 }
 
-function classifyOverall() {
-    SCORE_ENGINE.level = classifyRisk(SCORE_ENGINE.overallStress);
-}
-
-function calculateConfidence() {
-    const values = Object.values(SurveyEngine.answers).filter(v => typeof v === "number");
-    if (values.length === 0) return;
-    const avg = values.reduce((a, b) => a + b, 0) / values.length;
-    let diff = 0;
-    values.forEach(v => diff += Math.abs(avg - v));
-    diff /= values.length;
-    SCORE_ENGINE.confidence = Math.max(40, 100 - diff * 18);
-}
-
-// ===== TÍNH TOÁN TẤT CẢ =====
-async function calculateAllScores() {
-    calculateGroupScores();
-    calculatePeakStress();
+// Hàm tính tất cả
+function calculateAllScores() {
+    calculateDomainScores();
     calculateOverallStress();
-    calculateSpreadStress();
     calculateBurnout();
-    calculateCriticalIndex();
-    calculateConfidence();
-    classifyOverall();
-    rankStressAreas();
     calculateResilience();
-
-    SCORE_ENGINE.burnoutIndex = SCORE_ENGINE.burnout;
-    SCORE_ENGINE.spreadIndex = SCORE_ENGINE.spreadStress;
-
-    if (typeof buildReport === "function") await buildReport();
-    if (typeof saveLocal === "function") saveLocal();
+    rankDomains();
+    
+    // Log để debug
+    console.log('✅ Domain Scores:', SCORE_ENGINE.domainScores);
+    console.log('✅ Overall Stress:', SCORE_ENGINE.overallStress);
+    console.log('✅ Rank:', SCORE_ENGINE.rank);
+    
+    // Gọi build report nếu có
+    if (typeof buildReport === 'function') {
+        buildReport();
+    }
 }

@@ -163,30 +163,6 @@ document
 
 )
 
-.addEventListener(
-
-"click",
-
-restartSurvey
-
-);
-
-document
-
-.getElementById(
-
-"downloadJSON"
-
-)
-
-.addEventListener(
-
-"click",
-
-downloadJSON
-
-);
-
 /*
 Cần thêm
 
@@ -307,14 +283,6 @@ document
 "downloadPDF"
 
 )
-
-.addEventListener(
-
-"click",
-
-exportPDF
-
-);
 
 function animateNumber(
 
