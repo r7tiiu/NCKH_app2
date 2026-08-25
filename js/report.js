@@ -1,6 +1,6 @@
 /*
 ==================================================
-StressCheck – report.js
+StressCheck – report.js (có AI)
 ==================================================
 */
 
@@ -29,18 +29,19 @@ const REPORT_ENGINE = {
 
         let html = `<div class="report-section"><h2>🔥 3 nguồn stress lớn nhất & gợi ý</h2>`;
         rank.slice(0, 3).forEach((item, index) => {
+            const risk = item.risk !== undefined ? item.risk : item.score || 0;
             html += `
             <div class="top-card combined-card">
                 <div class="top-card-header">
                     <span class="top-number">${index + 1}</span>
-                    <h3>${item.title}</h3>
-                    <span class="stress-badge" style="background:${getColor(item.risk)}; color:white; padding:4px 14px; border-radius:20px; font-size:0.9rem;">
-                        ${item.risk.toFixed(0)}%
+                    <h3>${item.title || item.id}</h3>
+                    <span class="stress-badge" style="background:${getColor(risk)}; color:white; padding:4px 14px; border-radius:20px; font-size:0.9rem;">
+                        ${risk.toFixed(0)}%
                     </span>
                 </div>
                 <div class="top-card-body">
-                    <p><strong>📊 Mức stress:</strong> ${item.risk.toFixed(1)}%</p>
-                    <p><strong>💡 Gợi ý:</strong> ${getAdvice(item.id, item.risk)}</p>
+                    <p><strong>📊 Mức stress:</strong> ${risk.toFixed(1)}%</p>
+                    <p><strong>💡 Gợi ý:</strong> ${getAdvice(item.id, risk)}</p>
                 </div>
             </div>`;
         });
@@ -75,14 +76,14 @@ function getColor(score) {
 // ==================================================
 // XÂY DỰNG BÁO CÁO
 // ==================================================
-function buildReport() {
+async function buildReport() {
     try {
         REPORT_ENGINE.generate();
         renderSummaryCards();
         createRadarData();
         renderCharts();
+        await generateAIAdvice();
         showResultsPage();
-        generateAIAdvice()
         if (typeof animateCards === "function") animateCards();
     } catch (error) {
         console.error("Build report failed", error);
@@ -101,82 +102,29 @@ function showResultsPage() {
 }
 
 // ==================================================
-// SUMMARY CARDS
+// AI ADVICE
 // ==================================================
-function renderSummaryCards() {
-    const overall = SCORE_ENGINE.overallStress || 0;
-    const burnout = SCORE_ENGINE.burnoutIndex || 0;
-    const peak = SCORE_ENGINE.rank && SCORE_ENGINE.rank.length > 0 ? SCORE_ENGINE.rank[0] : null;
-    const resilience = SCORE_ENGINE.resilienceIndex || 0;
-
-    const setText = (id, val) => {
-        const el = document.getElementById(id);
-        if (el) el.textContent = val;
-    };
-    const setHTML = (id, html) => {
-        const el = document.getElementById(id);
-        if (el) el.innerHTML = html;
-    };
-
-    setText('overallStressValue', overall.toFixed(1) + '%');
-    setText('burnoutValue', burnout.toFixed(1) + '%');
-    setText('peakValue', peak ? peak.risk.toFixed(1) + '%' : '0%');
-    setText('resilienceValue', resilience + '%');
-
-    setHTML('overallProgress', buildProgressBar(overall));
-    setHTML('burnoutProgress', buildProgressBar(burnout));
-    setHTML('peakProgress', peak ? buildProgressBar(peak.risk) : buildProgressBar(0));
-    setHTML('resilienceProgress', buildResilienceProgressBar(resilience));
-
-    setHTML('overallLevel', levelText(overall));
-    setHTML('burnoutLevel', levelText(burnout));
-    setHTML('peakLevel', peak ? levelText(peak.risk) : levelText(0));
-    setHTML('resilienceLevel', resilienceLevelText(resilience));
-
-    const peakTitle = document.getElementById('peakTitle');
-    if (peakTitle) peakTitle.textContent = peak ? peak.title : '-';
-}
-
-function levelText(score) {
-    if (score < 20) return "Bình thường 😌";
-    if (score < 40) return "Áp lực nhẹ 🙂";
-    if (score < 60) return "Stress trung bình 😐";
-    if (score < 80) return "Stress cao 😟";
-    return "Stress rất cao 😣";
-}
-
-function resilienceLevelText(score) {
-    if (score >= 80) return "Rất tốt 💪";
-    if (score >= 60) return "Khá tốt 👍";
-    if (score >= 40) return "Trung bình 🤔";
-    if (score >= 20) return "Cần cải thiện 😕";
-    return "Đáng lo ngại 😟";
-}
-
-function buildProgressBar(score) {
-    let color = "#27ae60";
-    if (score >= 40 && score < 60) color = "#f39c12";
-    if (score >= 60 && score < 80) color = "#e67e22";
-    if (score >= 80) color = "#e74c3c";
-    return `<div class="progress-container" style="background:#eef4fb;width:100%;height:8px;border-radius:4px;overflow:hidden;">
-                <div class="progress-bar" style="width:${score}%;height:100%;background:${color};transition:width 0.5s ease;"></div>
-            </div>`;
-}
-
 async function generateAIAdvice() {
+    // Lấy top 3 stressor với risk
+    const topStressors = (SCORE_ENGINE.rank || []).slice(0, 3).map(item => ({
+        title: item.title || item.id,
+        risk: item.risk !== undefined ? item.risk : item.score || 0
+    }));
+
     const data = {
         overallStress: SCORE_ENGINE.overallStress || 0,
         burnout: SCORE_ENGINE.burnoutIndex || 0,
-        topStressors: (SCORE_ENGINE.rank || []).slice(0, 3).map(item => item.title)
+        resilience: SCORE_ENGINE.resilienceIndex || 0,
+        topStressors: topStressors.map(item => `${item.title} (${item.risk.toFixed(0)}%)`)
     };
 
-    // Fallback nếu không có AI
     const fallbackHTML = `
         <div class="report-section">
             <h2>🧠 Phân tích tâm lý</h2>
             <ul>
                 <li><strong>Mức độ stress tổng thể:</strong> ${data.overallStress.toFixed(1)}%</li>
                 <li><strong>Chỉ số kiệt sức (Burnout):</strong> ${data.burnout.toFixed(1)}%</li>
+                <li><strong>Khả năng phục hồi (Resilience):</strong> ${data.resilience.toFixed(1)}%</li>
                 <li><strong>Ba nguồn stress lớn nhất:</strong> ${data.topStressors.join(', ') || 'Chưa có dữ liệu'}</li>
             </ul>
             <p>💡 <em>Hãy dành thời gian nghỉ ngơi, chia sẻ với người thân và cân bằng cuộc sống.</em></p>
@@ -266,4 +214,77 @@ function showAdvice(content) {
     }
 }
 
-console.log('✅ report.js loaded');
+// ==================================================
+// SUMMARY CARDS
+// ==================================================
+function renderSummaryCards() {
+    const overall = SCORE_ENGINE.overallStress || 0;
+    const burnout = SCORE_ENGINE.burnoutIndex || 0;
+    const peak = SCORE_ENGINE.rank && SCORE_ENGINE.rank.length > 0 ? SCORE_ENGINE.rank[0] : null;
+    const resilience = SCORE_ENGINE.resilienceIndex || 0;
+
+    const setText = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = val;
+    };
+    const setHTML = (id, html) => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = html;
+    };
+
+    setText('overallStressValue', overall.toFixed(1) + '%');
+    setText('burnoutValue', burnout.toFixed(1) + '%');
+    setText('peakValue', peak ? (peak.risk !== undefined ? peak.risk : peak.score || 0).toFixed(1) + '%' : '0%');
+    setText('resilienceValue', resilience + '%');
+
+    setHTML('overallProgress', buildProgressBar(overall));
+    setHTML('burnoutProgress', buildProgressBar(burnout));
+    setHTML('peakProgress', peak ? buildProgressBar(peak.risk !== undefined ? peak.risk : peak.score || 0) : buildProgressBar(0));
+    setHTML('resilienceProgress', buildResilienceProgressBar(resilience));
+
+    setHTML('overallLevel', levelText(overall));
+    setHTML('burnoutLevel', levelText(burnout));
+    setHTML('peakLevel', peak ? levelText(peak.risk !== undefined ? peak.risk : peak.score || 0) : levelText(0));
+    setHTML('resilienceLevel', resilienceLevelText(resilience));
+
+    const peakTitle = document.getElementById('peakTitle');
+    if (peakTitle) peakTitle.textContent = peak ? (peak.title || peak.id) : '-';
+}
+
+function levelText(score) {
+    if (score < 20) return "Bình thường 😌";
+    if (score < 40) return "Áp lực nhẹ 🙂";
+    if (score < 60) return "Stress trung bình 😐";
+    if (score < 80) return "Stress cao 😟";
+    return "Stress rất cao 😣";
+}
+
+function resilienceLevelText(score) {
+    if (score >= 80) return "Rất tốt 💪";
+    if (score >= 60) return "Khá tốt 👍";
+    if (score >= 40) return "Trung bình 🤔";
+    if (score >= 20) return "Cần cải thiện 😕";
+    return "Đáng lo ngại 😟";
+}
+
+function buildProgressBar(score) {
+    let color = "#27ae60";
+    if (score >= 40 && score < 60) color = "#f39c12";
+    if (score >= 60 && score < 80) color = "#e67e22";
+    if (score >= 80) color = "#e74c3c";
+    return `<div class="progress-container" style="background:#eef4fb;width:100%;height:8px;border-radius:4px;overflow:hidden;">
+                <div class="progress-bar" style="width:${score}%;height:100%;background:${color};transition:width 0.5s ease;"></div>
+            </div>`;
+}
+
+function buildResilienceProgressBar(score) {
+    let color = "#e74c3c";
+    if (score >= 40 && score < 60) color = "#e67e22";
+    if (score >= 60 && score < 80) color = "#f39c12";
+    if (score >= 80) color = "#27ae60";
+    return `<div class="progress-container" style="background:#eef4fb;width:100%;height:8px;border-radius:4px;overflow:hidden;">
+                <div class="progress-bar" style="width:${score}%;height:100%;background:${color};transition:width 0.5s ease;"></div>
+            </div>`;
+}
+
+console.log('✅ report.js loaded (có AI)');
