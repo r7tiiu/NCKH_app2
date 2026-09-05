@@ -24,12 +24,12 @@ const WEIGHT_I = 0.17;
 
 // Trọng số các domain
 const DOMAIN_WEIGHTS = {
-    study: 0.1624,
-    exam: 0.1893,
-    sleep: 0.1586,
-    emotion: 0.1680,
-    family: 0.1741,
-    social: 0.1475
+    study: 0.1633,
+    exam: 0.1882,
+    sleep: 0.1578,
+    emotion: 0.1701,
+    family: 0.1712,
+    social: 0.1494
 };
 
 // Hàm tính điểm S từ câu trả lời (0-4)
