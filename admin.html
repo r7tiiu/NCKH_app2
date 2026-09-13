@@ -151,12 +151,13 @@ function render() {
       const isMax = d === r.highestDomain;
       return `<td>${isMax ? `<span class="badge">${v}</span>` : v}</td>`;
     }).join('');
-    tr.innerHTML = `
+        tr.innerHTML = `
       <td>${i + 1}</td>
       <td>${date}</td>
       <td><strong>${r.overallStress}</strong></td>
       <td>${r.highestDomain || '—'}</td>
       ${domainCells}
+      <td><button class="delete-btn" onclick="deleteResult('${r.id}')">🗑️ Xóa</button></td>
     `;
     tbody.appendChild(tr);
   });
