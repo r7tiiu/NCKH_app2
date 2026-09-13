@@ -94,7 +94,9 @@ function logout() {
 
 async function loadData() {
   try {
-    const res = await fetch('/api/results?password=' + encodeURIComponent(currentPassword));
+    const res = await fetch('/api/results?password=' + encodeURIComponent(currentPassword), {
+      cache: 'no-store'
+    });
     if (!res.ok) return false;
     const data = await res.json();
     allResults = data.results || [];
