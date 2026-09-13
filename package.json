@@ -1,4 +1,8 @@
 {
-  "name": "stresscheck-ai",
-  "version": "1.0.1"
+  "name": "nckh-app2",
+  "version": "1.1.0",
+  "type": "module",
+  "dependencies": {
+    "@upstash/redis": "^1.28.0"
+  }
 }
