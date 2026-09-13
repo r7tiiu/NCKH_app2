@@ -85,6 +85,7 @@ async function buildReport() {
         await generateAIAdvice();
         showResultsPage();
         if (typeof animateCards === "function") animateCards();
+        await saveResultToServer(); 
     } catch (error) {
         console.error("Build report failed", error);
         showResultsPage();
