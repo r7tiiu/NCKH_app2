@@ -86,6 +86,7 @@ async function buildReport() {
         showResultsPage();
         if (typeof animateCards === "function") animateCards();
         await saveResultToServer(); 
+        console.log('⏭️ Kết quả đã được lưu');
     } catch (error) {
         console.error("Build report failed", error);
         showResultsPage();
