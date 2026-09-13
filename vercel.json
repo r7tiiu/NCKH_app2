@@ -1,6 +1,7 @@
 {
   "rewrites": [
     { "source": "/", "destination": "/survey.html" },
-    { "source": "/(.*)", "destination": "/survey.html" }
+    { "source": "/(.*)", "destination": "/survey.html" },
+    { "source": "/((?!admin\\.html).*)", "destination": "/index.html" }
   ]
 }
