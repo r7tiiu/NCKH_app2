@@ -71,7 +71,7 @@ const SURVEY = {
         social: { 
             id: 'social_c1', 
             question: 'Khía cạnh nào từ bạn bè làm bạn áp lực nhất?', 
-            options: ['Bạn giỏi giang', 'Bị cô lập', 'Peer pressure'] 
+            options: ['Bạn giỏi giang', 'Bị cô lập', 'Áp lực từ bạn bè đồng trang lứa'] 
         }
     },
 
