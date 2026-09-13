@@ -293,53 +293,82 @@ function buildResilienceProgressBar(score) {
 // HÀM LƯU KẾT QUẢ LÊN SERVER (Định nghĩa hàm)
 // ==================================================
 async function saveResultToServer() {
-    // Chống lưu trùng trong cùng 1 phiên (F5 không ghi thêm)
-    if (sessionStorage.getItem('saved_result_id')) {
-        console.log('⏭️ Kết quả đã được lưu trước đó, bỏ qua.');
-        return;
+    // Tạo ID duy nhất cho MỘT lần nộp
+    let submissionId = sessionStorage.getItem('current_submission_id');
+
+    if (!submissionId) {
+        submissionId = crypto.randomUUID();
+        sessionStorage.setItem('current_submission_id', submissionId);
     }
 
     const rank = SCORE_ENGINE.rank || [];
-    const overallStress = Number((SCORE_ENGINE.overallStress || 0).toFixed(1));
 
-    // Lĩnh vực stress cao nhất
+    const overallStress = Number(
+        (SCORE_ENGINE.overallStress || 0).toFixed(1)
+    );
+
     const highestItem = rank[0];
+
     const highestDomain = highestItem
         ? (highestItem.title || highestItem.id)
         : null;
 
-    // % của 6 lĩnh vực
     const domains = {};
+
     rank.forEach(item => {
-        const risk = item.risk !== undefined ? item.risk : (item.score || 0);
-        domains[item.id] = Number(risk.toFixed(1));
+        const risk = item.risk !== undefined
+            ? item.risk
+            : (item.score || 0);
+
+        const key = item.title || item.id;
+        domains[key] = Number(risk.toFixed(1));
     });
 
-    // Nếu chạy local thì không gọi API
-    const isLocal = window.location.protocol === 'file:' ||
-                    window.location.hostname === 'localhost' ||
-                    window.location.hostname === '127.0.0.1';
+    const isLocal =
+        window.location.protocol === 'file:' ||
+        window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1';
+
     if (isLocal) {
-        console.log('🔧 Local dev – bỏ qua lưu kết quả. Payload:', { overallStress, highestDomain, domains });
+        console.log('🔧 Local dev – bỏ qua lưu kết quả.');
+        console.log({
+            submissionId,
+            overallStress,
+            highestDomain,
+            domains
+        });
         return;
     }
 
     try {
         const res = await fetch('/api/results', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ overallStress, highestDomain, domains })
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                submissionId,
+                overallStress,
+                highestDomain,
+                domains
+            })
         });
 
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        if (!res.ok) {
+            throw new Error(`HTTP ${res.status}`);
+        }
 
         const data = await res.json();
+
         if (data && data.id) {
             sessionStorage.setItem('saved_result_id', data.id);
         }
-        console.log('💾 Đã lưu kết quả khảo sát:', data);
+
+        console.log('💾 Đã lưu kết quả:', data);
+        sessionStorage.removeItem('current_submission_id');
+
     } catch (err) {
-        console.warn('⚠️ Không lưu được kết quả (không ảnh hưởng UI):', err);
+        console.warn('⚠️ Không lưu được kết quả:', err);
     }
 }
 
