@@ -312,8 +312,7 @@ async function saveResultToServer() {
     const domains = {};
     rank.forEach(item => {
         const risk = item.risk !== undefined ? item.risk : (item.score || 0);
-        const key = item.title || item.id;
-        domains[key] = Number(risk.toFixed(1));
+        domains[item.id] = Number(risk.toFixed(1));
     });
 
     // Nếu chạy local thì không gọi API
