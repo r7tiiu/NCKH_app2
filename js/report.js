@@ -144,13 +144,22 @@ async function generateAIAdvice() {
         return;
     }
 
-    const prompt = `Bạn là chuyên gia tâm lý. Dựa trên kết quả stress của học sinh:
-- Stress tổng: ${data.overallStress}%
-- Burnout: ${data.burnout}%
-- Resilience: ${data.resilience}%
-- Top 3 stress: ${data.topStressors.join(', ')}.
-
-Hãy đưa ra 3 lời khuyên ngắn gọn, thực tế, mỗi lời khuyên 1-2 câu. Không phân tích dài dòng, không mở đầu.`;
+    const prompt = `
+    Bạn là trợ lý tư vấn sức khỏe tinh thần học đường.
+    
+    Phân tích kết quả của một học sinh THPT:
+    - Stress tổng: ${data.overallStress}%
+    - Burnout: ${data.burnout}%
+    - Nguồn stress chính: ${data.topStressors.join(', ')}
+    - Top 3 stress: ${data.topStressors.join(', ')}.
+    
+    Yêu cầu:
+    - Viết đúng 3 gạch đầu dòng.
+    - Mỗi gạch đầu dòng 1-2 câu.
+    - Lời khuyên thực tế, dễ áp dụng.
+    - Không chẩn đoán bệnh.
+    - Không mở đầu, không kết luận thêm.
+    `;
 
     try {
         const response = await fetch('/api/advice', {
