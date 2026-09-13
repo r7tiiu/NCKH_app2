@@ -135,5 +135,23 @@
 <script src="js/dashboard.js"></script>
 <script src="js/export.js"></script>
 <script src="js/report.js"></script>
+
+<script>
+(function () {
+    const oldButton = document.getElementById('restartSurvey');
+
+    if (!oldButton) return;
+    const button = oldButton.cloneNode(true);
+    oldButton.replaceWith(button);
+
+    button.addEventListener('click', function () {
+        sessionStorage.removeItem('current_submission_id');
+        sessionStorage.removeItem('saved_result_id');
+        sessionStorage.removeItem('saving_result');
+        window.location.href = 'survey.html';
+    });
+})();
+</script>
+    
 </body>
 </html>
