@@ -1630,3 +1630,6 @@ body.dark .drag-handle:hover {
 .ranking-item.dragging {
     opacity: 0.4;
 }
+
+.delete-btn { background: #ef4444; padding: 6px 12px; font-size: 13px; border-radius: 6px; }
+.delete-btn:hover { background: #dc2626; }
