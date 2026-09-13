@@ -189,6 +189,24 @@ function exportCSV() {
   URL.revokeObjectURL(url);
 }
 
+ async function deleteResult(id) {
+  if (!confirm('Bạn có chắc muốn xóa kết quả này không?')) return;
+  try {
+    const res = await fetch('/api/results?password=' + encodeURIComponent(currentPassword) + '&id=' + id, {
+      method: 'DELETE'
+    });
+    if (res.ok) {
+      alert('Đã xóa thành công!');
+      loadData(); // Tải lại bảng
+    } else {
+      alert('Lỗi khi xóa!');
+    }
+  } catch (e) {
+    console.error(e);
+    alert('Lỗi kết nối!');
+  }
+}
+
 // Cho phép Enter ở ô mật khẩu
 document.getElementById('pw').addEventListener('keydown', e => {
   if (e.key === 'Enter') login();
