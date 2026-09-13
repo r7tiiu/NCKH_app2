@@ -4,28 +4,70 @@ const redis = Redis.fromEnv();
 
 export default async function handler(req, res) {
   // ---------- LƯU KẾT QUẢ ----------
-  if (req.method === 'POST') {
+if (req.method === 'POST') {
     try {
-      const { overallStress, highestDomain, domains } = req.body || {};
+        const {
+            submissionId,
+            overallStress,
+            highestDomain,
+            domains
+        } = req.body || {};
 
-      if (overallStress === undefined || !domains) {
-        return res.status(400).json({ error: 'Thiếu dữ liệu' });
-      }
+        if (!submissionId || overallStress === undefined || !domains) {
+            return res.status(400).json({
+                error: 'Thiếu dữ liệu'
+            });
+        }
 
-      const record = {
-        id: crypto.randomUUID(),
-        timestamp: new Date().toISOString(),
-        overallStress: Number(overallStress),
-        highestDomain: highestDomain || null,
-        domains: domains // ví dụ: { "Công việc": 55, "Tài chính": 30, ... }
-      };
+        // Kiểm tra submission này đã được lưu chưa
+        const existingResults = await redis.lrange(
+            'survey_results',
+            0,
+            -1
+        );
 
-      await redis.lpush('survey_results', JSON.stringify(record));
-      return res.status(200).json({ ok: true, id: record.id });
+        for (const item of existingResults) {
+            const record =
+                typeof item === 'string'
+                    ? JSON.parse(item)
+                    : item;
+
+            if (record.submissionId === submissionId) {
+                // Đã lưu rồi → không tạo bản ghi mới
+                return res.status(200).json({
+                    ok: true,
+                    id: record.id,
+                    duplicate: true
+                });
+            }
+        }
+
+        const record = {
+            id: crypto.randomUUID(),
+            submissionId,
+            timestamp: new Date().toISOString(),
+            overallStress: Number(overallStress),
+            highestDomain: highestDomain || null,
+            domains
+        };
+
+        await redis.lpush(
+            'survey_results',
+            JSON.stringify(record)
+        );
+
+        return res.status(200).json({
+            ok: true,
+            id: record.id,
+            duplicate: false
+        });
+
     } catch (err) {
-      return res.status(500).json({ error: err.message });
+        return res.status(500).json({
+            error: err.message
+        });
     }
-  }
+}
 
   // ---------- ĐỌC KẾT QUẢ (cần mật khẩu) ----------
   if (req.method === 'GET') {
