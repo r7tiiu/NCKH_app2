@@ -181,9 +181,4 @@ function calculateAllScores() {
     console.log('✅ Domain Scores:', SCORE_ENGINE.domainScores);
     console.log('✅ Overall Stress:', SCORE_ENGINE.overallStress);
     console.log('✅ Rank:', SCORE_ENGINE.rank);
-    
-    // Gọi build report nếu có
-    if (typeof buildReport === 'function') {
-        buildReport();
-    }
 }
