@@ -18,18 +18,18 @@ const SCORE_ENGINE = {
 };
 
 // Trọng số S, C, I
-const WEIGHT_S = 0.55;
-const WEIGHT_C = 0.28;
-const WEIGHT_I = 0.17;
+const WEIGHT_S = 0.3774;
+const WEIGHT_C = 0.3813;
+const WEIGHT_I = 0.2413;
 
 // Trọng số các domain
 const DOMAIN_WEIGHTS = {
-    study: 0.1633,
-    exam: 0.1882,
-    sleep: 0.1578,
-    emotion: 0.1701,
-    family: 0.1712,
-    social: 0.1494
+    study: 0.1465,
+    exam: 0.1638,
+    sleep: 0.1574,
+    family: 0.1666,
+    social: 0.1677,
+    emotion: 0.1980
 };
 
 // Hàm tính điểm S từ câu trả lời (0-4)
