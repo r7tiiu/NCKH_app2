@@ -5,11 +5,11 @@ StressCheck AI – survey.js (3 cặp, gộp C/I)
 */
 
 const LikertText = [
-    "Hoàn toàn không",
-    "Rất ít",
-    "Thỉnh thoảng",
-    "Khá nhiều",
-    "Gần như luôn"
+    "Hoàn toàn không đồng ý",
+    "Không đồng ý",
+    "Phân vân",
+    "Đồng ý",
+    "Hoàn toàn đồng ý"
 ];
 
 const SurveyEngine = {
